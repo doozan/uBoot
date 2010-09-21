@@ -240,6 +240,8 @@ if [ -d /usr/local/cloudengines/ ]; then
     echo "Done fixing pogoplug environment."
     echo ""
   fi
+
+  install "$UBOOT_ORIGINAL"   "$UBOOT_ORIGINAL_URL"    644
 fi
 
 
@@ -257,7 +259,6 @@ if [ ! -f "$FW_SETENV" ]; then
     mount -o remount,ro /
   fi
 fi
-install "$UBOOT_ORIGINAL"   "$UBOOT_ORIGINAL_URL"    644
 
 
 
@@ -357,12 +358,13 @@ if [ "$bootcmd" != "$bootcmd_original" ]; then
   
   verify_md5 "/tmp/uboot-mtd0-dump" "$UBOOT_MTD0.md5"
   if [ "$?" -ne "0" ]; then
+  if [ 1 ]; then
     rm "/tmp/valid-uboot.md5" 2> /dev/null
     wget -O "/tmp/valid-uboot.md5" "$VALID_UBOOT_MD5"
     
     CURRENT_UBOOT_MD5=$(md5sum "/tmp/uboot-mtd0-dump" | cut -d' ' -f1)
     UBOOT_IS_KNOWN=$(grep $CURRENT_UBOOT_MD5 /tmp/valid-uboot.md5)
-    if [ "$UBOOT_IS_KNOWN" = "1" ]; then
+    if [ "$UBOOT_IS_KNOWN" != "" ]; then
       rm "/tmp/valid-uboot.md5"
       echo "## Valid uBoot detected on mtd0."
     else
@@ -461,6 +463,26 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
   echo ""
   echo "# Installing uBoot environment"
 
+  # Preserve the MAC address 
+  ENV_ETHADDR=`$FW_PRINTENV ethaddr | cut -d'=' -f 2-`
+  if [ "$ENV_ETHADDR" = "" ]; then
+    ENV_ETHADDR=`$BLPARAM | grep "^ethaddr=" | cut -d'=' -f 2-`
+  fi
+
+  # Preserve the 'rescue_installed' setting
+  ENV_RESCUE_INSTALLED=`$FW_PRINTENV rescue_installed | cut -d'=' -f 2-`
+  if [ "$ENV_RESCUE_INSTALLED" = "" ]; then
+    ENV_BOOTCMD_RESCUE=`$FW_PRINTENV bootcmd_rescue`
+    if [ "$ENV_BOOTCMD_RESCUE" != "" ]; then
+      ENV_RESCUE_INSTALLED=1
+    fi
+  fi
+
+  # Preserve the custom kernel parameters
+  ENV_RESCUE_CUSTOM=`$FW_PRINTENV rescue_custom_params | cut -d'=' -f 2-`
+  ENV_USB_CUSTOM=`$FW_PRINTENV usb_custom_params | cut -d'=' -f 2-`
+  ENV_UBIFS_CUSTOM=`$FW_PRINTENV ubifs_custom_params | cut -d'=' -f 2-`
+
   # Install the uBoot environment
   download_and_verify "$UBOOT_ENV" "$UBOOT_ENV_URL"
   if [ "$?" -ne "0" ]; then
@@ -485,11 +507,11 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
   fi
   rm -f "$UBOOT_ENV.md5"
 
-
-  # Preserve the MAC address 
-  ETHADDR=`$BLPARAM | grep "^ethaddr=" | cut -d'=' -f 2-`
-
-  $FW_SETENV ethaddr $ETHADDR
+  $FW_SETENV ethaddr $ENV_ETHADDR
+  if [ "$ENV_RESCUE_INSTALLED" = "1" ]; then $FW_SETENV rescue_installed $ENV_RESCUE_INSTALLED; fi
+  if [ "$ENV_RESCUE_CUSTOM" != "" ]; then $FW_SETENV rescue_custom_params $ENV_RESCUE_CUSTOM; fi
+  if [ "$ENV_USB_CUSTOM" != "" ]; then $FW_SETENV rescue_usb_params $ENV_USB_CUSTOM; fi
+  if [ "$ENV_UBIFS_CUSTOM" != "" ]; then $FW_SETENV rescue_ubifs_params $ENV_UBIFS_CUSTOM; fi
 
   $BLPARAM "bootcmd_original=$bootcmd_original" > /dev/null 2>&1
   $BLPARAM 'bootcmd=run bootcmd_original' > /dev/null 2>&1
