@@ -1,0 +1,22 @@
+#!/bin/bash
+
+sed -i 's/^TEXT_BASE = 0x00.00000/TEXT_BASE = 0x00600000/' board/Marvell/sheevaplug/config.mk
+
+make mrproper
+make sheevaplug_config
+make u-boot.kwb
+
+#echo "Creating u-boot.bin.512k padded to 512k"
+#dd if=u-boot.bin of=u-boot.bin.512k ibs=512K conv=sync
+
+echo "Removing bad u-boot.kwb"
+rm u-boot.kwb
+
+echo "Creating u-boot.nand"
+rm u-boot.nand
+./doimage -T nand -D 0x600000 -E 0x600000 -P 2048 -R dramregs_pp128_A.txt u-boot.bin u-boot.nand
+
+echo "Creating uboot.mtd0.kwb padded to 512k"
+rm uboot.mtd0.kwb
+dd if=u-boot.nand of=uboot.mtd0.kwb ibs=512K conv=sync
+
