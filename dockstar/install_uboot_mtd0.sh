@@ -358,7 +358,6 @@ if [ "$bootcmd" != "$bootcmd_original" ]; then
   
   verify_md5 "/tmp/uboot-mtd0-dump" "$UBOOT_MTD0.md5"
   if [ "$?" -ne "0" ]; then
-  if [ 1 ]; then
     rm "/tmp/valid-uboot.md5" 2> /dev/null
     wget -O "/tmp/valid-uboot.md5" "$VALID_UBOOT_MD5"
     
