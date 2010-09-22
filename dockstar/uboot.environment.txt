@@ -1,0 +1,33 @@
+ethact=egiga0
+stdin=serial
+stdout=serial
+stderr=serial
+bootdelay=3
+baudrate=115200
+arcNumber=2097
+mainlineLinux=yes
+console=ttyS0,115200
+led_init=green blinking
+led_exit=green off
+led_error=orange blinking
+mtdparts=mtdparts=orion_nand:1M(u-boot),4M(uImage),32M(rootfs),-(data)
+mtdids=nand0=orion_nand
+partition=nand0,2
+rescue_installed=0
+rescue_set_bootargs=setenv bootargs console=$console ubi.mtd=2 root=ubi0:rootfs ro rootfstype=ubifs $mtdparts $rescue_custom_params
+rescue_bootcmd=if test $rescue_installed -eq 1; then run rescue_set_bootargs; nand read.e 0x800000 0x100000 0x400000; bootm 0x800000; else run pogo_bootcmd; fi
+pogo_bootcmd=if fsload uboot-original-mtd0.kwb; then go 0x800200; fi
+force_rescue=0
+force_rescue_bootcmd=if test $force_rescue -eq 1 || ext2load usb 0:1 0x1700000 /rescueme 1 || fatload usb 0:1 0x1700000 /rescueme.txt 1; then run rescue_bootcmd; fi
+ubifs_mtd=3
+ubifs_set_bootargs=setenv bootargs console=$console ubi.mtd=$ubifs_mtd root=ubi0:rootfs rootfstype=ubifs $mtdparts $ubifs_custom_params
+ubifs_bootcmd=run ubifs_set_bootargs; if ubi part data && ubifsmount rootfs && ubifsload 0x800000 /boot/uImage && ubifsload 0x1100000 /boot/uInitrd; then bootm 0x800000 0x1100000; fi
+usb_init=usb start; if ext2load usb 0:1 0x800000 /boot/uImage 1; then setenv usb_device 0:1; setenv usb_root /dev/sda1; elif ext2load usb 1:1 0x800000 /boot/uImage 1; then setenv usb_device 1:1; setenv usb_root /dev/sdb1; elif ext2load usb 2:1 0x800000 /boot/uImage 1; then setenv usb_device 2:1; setenv usb_root /dev/sdc1; elif ext2load usb 3:1 0x800000 /boot/uImage 1; then setenv usb_device 3:1;setenv usb_root /dev/sdd1; fi;
+usb_device=0:1
+usb_root=/dev/sda1
+usb_rootfstype=ext2
+usb_rootdelay=10
+usb_set_bootargs=setenv bootargs console=$console root=$usb_root rootdelay=$usb_rootdelay rootfstype=$usb_rootfstype $mtdparts $usb_custom_params
+usb_bootcmd=run usb_init; run usb_set_bootargs; run usb_boot;
+usb_boot=mw 0x800000 0 1; ext2load usb $usb_device 0x800000 /boot/uImage; if ext2load usb $usb_device 0x1100000 /boot/uInitrd; then bootm 0x800000 0x1100000; else bootm 0x800000; fi;
+bootcmd=usb start; run force_rescue_bootcmd; run ubifs_bootcmd; run usb_bootcmd; usb stop; run rescue_bootcmd; run pogo_bootcmd; reset
