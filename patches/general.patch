@@ -1,0 +1,45 @@
+diff -Naur orig-uboot/tools/env/fw_env.c u-boot/tools/env/fw_env.c
+--- orig-uboot/tools/env/fw_env.c	2010-09-21 00:39:57.000000000 +0100
++++ u-boot/tools/env/fw_env.c	2010-09-21 01:20:57.000000000 +0100
+@@ -393,13 +393,14 @@
+ 		/*
+ 		 * Ethernet Address and serial# can be set only once
+ 		 */
++/*
+ 		if ((strcmp (name, "ethaddr") == 0) ||
+ 			(strcmp (name, "serial#") == 0)) {
+ 			fprintf (stderr, "Can't overwrite \"%s\"\n", name);
+ 			errno = EROFS;
+ 			return -1;
+ 		}
+-
++*/
+ 		if (*++nxt == '\0') {
+ 			*env = '\0';
+ 		} else {
+diff -Naur orig-uboot/tools/env/fw_env.config u-boot/tools/env/fw_env.config
+--- orig-uboot/tools/env/fw_env.config	2010-09-21 00:39:57.000000000 +0100
++++ u-boot/tools/env/fw_env.config	2010-09-21 01:20:57.000000000 +0100
+@@ -4,8 +4,4 @@
+ # Notice, that the "Number of sectors" is ignored on NOR.
+ 
+ # MTD device name	Device offset	Env. size	Flash sector size	Number of sectors
+-/dev/mtd1		0x0000		0x4000		0x4000
+-/dev/mtd2		0x0000		0x4000		0x4000
+-
+-# NAND example
+-#/dev/mtd0		0x4000		0x4000		0x20000			2
++/dev/mtd0		0xc0000		0x20000		0x20000
+diff -Naur orig-uboot/tools/env/Makefile u-boot/tools/env/Makefile
+--- orig-uboot/tools/env/Makefile	2010-09-21 00:39:57.000000000 +0100
++++ u-boot/tools/env/Makefile	2010-09-21 01:20:57.000000000 +0100
+@@ -26,7 +26,8 @@
+ SRCS	:= $(obj)crc32.c  fw_env.c  fw_env_main.c
+ HEADERS	:= fw_env.h
+ 
+-CPPFLAGS := -Wall -DUSE_HOSTCC -I$(SRCTREE)/include
++CPPFLAGS := -static -Wall -DUSE_HOSTCC -I$(SRCTREE)/include
++#CPPFLAGS := -Wall -DUSE_HOSTCC -I$(SRCTREE)/include
+ 
+ ifeq ($(MTD_VERSION),old)
+ CPPFLAGS += -DMTD_OLD

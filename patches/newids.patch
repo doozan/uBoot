@@ -1,0 +1,41 @@
+diff --git a/arch/arm/include/asm/mach-types.h b/arch/arm/include/asm/mach-types.h
+index 8b0208a..9aa1823 100644
+--- a/arch/arm/include/asm/mach-types.h
++++ b/arch/arm/include/asm/mach-types.h
+@@ -3040,6 +3040,7 @@ extern unsigned int __machine_arch_type;
+ #define MACH_TYPE_MSM8X60_QRDC         3060
+ #define MACH_TYPE_SPEAR900             3061
+ #define MACH_TYPE_PCONTROL_G20         3062
++#define MACH_TYPE_GOFLEXNET            3089
+ 
+ #ifdef CONFIG_ARCH_EBSA110
+ # ifdef machine_arch_type
+@@ -39386,3 +39387,15 @@ extern unsigned int __machine_arch_type;
+ #endif
+ 
+ #endif
++
++#ifdef CONFIG_MACH_GOFLEXNET
++# ifdef machine_arch_type
++#  undef machine_arch_type
++#  define machine_arch_type	__machine_arch_type
++# else
++#  define machine_arch_type	MACH_TYPE_GOFLEXNET
++# endif
++# define machine_is_goflexnet()	(machine_arch_type == MACH_TYPE_GOFLEXNET)
++#else
++# define machine_is_goflexnet()	(0)
++#endif
+diff --git a/boards.cfg b/boards.cfg
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -251,6 +251,9 @@
+ mv88f6281gtw_ge	arm	arm926ejs	-		Marvell		kirkwood
+ openrd_base	arm	arm926ejs	-		Marvell		kirkwood
+ sheevaplug	arm	arm926ejs	-		Marvell		kirkwood
++dockstar	arm	arm926ejs	-		Marvell		kirkwood
++goflexnet	arm	arm926ejs	-		Marvell		kirkwood
++pinkpogo	arm	arm926ejs	-		Marvell		kirkwood
+ imx27lite	arm	arm926ejs	imx27lite	logicpd		mx27
+ magnesium	arm	arm926ejs	imx27lite	logicpd		mx27
+ omap5912osk	arm	arm926ejs	-		ti		omap
