@@ -230,7 +230,7 @@ UBOOT_DETAILS=$(grep $CURRENT_UBOOT_MD5 /tmp/valid-uboot.md5)
 if [ "$UBOOT_DETAILS" != "" ]; then
   UBOOT_PLATFORM=$(echo $UBOOT_DETAILS | sed 's/^\w* \(\w*\) .*$/\1/')
   UBOOT_VERSION=$(echo $UBOOT_DETAILS | sed 's/^\w* \w* \(.*\)$/\1/')
-  echo "## Valid uBoot detected: [$UBOOT_PLATFORM $UBOOT_VERSION] $UBOOT_DETAILS"
+  echo "## Valid uBoot detected: [$UBOOT_PLATFORM $UBOOT_VERSION]"
 else
   echo "## Unknown uBoot detected on mtd0: $CURRENT_UBOOT_MD5"
   echo "##"
