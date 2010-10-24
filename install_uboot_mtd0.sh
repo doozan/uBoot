@@ -487,16 +487,20 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
     $FW_SETENV arcNumber $ENV_ARCNUMBER
   # If there was no arcNumber set, then this is probably a new install.
   # Set the default arcNumber for the platform
-  # Note: As of 10/23/2010 the dockstar and pinkpogo will default to the SHEEVAPLUG arcNumber (2097)
+  # Note: As of 10/24/2010 everything will default to the SHEEVAPLUG arcNumber (2097)
   # at some point, they should start using the newer dockstar ID (2998) but currently the most 
   # common kernels do not support the Dockstar machine ID 
   else
-   echo "Setting default arcNumber for platform $UBOOT_PLATFORM"
-   if   [ "$UBOOT_PLATFORM" = "dockstar" ];  then $FW_SETENV arcNumber 2097
-   elif [ "$UBOOT_PLATFORM" = "goflexnet" ]; then $FW_SETENV arcNumber 3089
-   elif [ "$UBOOT_PLATFORM" = "pinkpogo" ];  then $FW_SETENV arcNumber 2097
-   else $FW_SETENV arcNumber 2097 # This should never happen
-   fi
+    $FW_SETENV arcNumber 2097
+    echo ""
+    echo ""
+    echo "# Setting arcNumber to 2097 (SheevaPlug)"
+    echo "# Note: if you have a kernel that supports your platform, you should use the proper arcNumber."
+    echo "# You can set the correct arcNumber by running the following command:"
+    if   [ "$UBOOT_PLATFORM" = "dockstar" ];  then echo $FW_SETENV arcNumber 2998
+    elif [ "$UBOOT_PLATFORM" = "goflexnet" ]; then echo $FW_SETENV arcNumber 3089
+    elif [ "$UBOOT_PLATFORM" = "pinkpogo" ];  then echo $FW_SETENV arcNumber 2998
+    fi
   fi
 
 fi
