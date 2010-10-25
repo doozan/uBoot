@@ -25,18 +25,18 @@
 
 # It is NOT a good idea to start your own mirror
 # You should leave this as-is
-MIRROR=http://jeff.doozan.com/debian/uboot
+MIRROR=http://jeff.doozan.com/debian
 
-UBOOT_MTD0_BASE_URL=$MIRROR/files/uboot/uboot.mtd0 # .platform.version.kwb will be appended to this
-UBOOT_ENV_URL=$MIRROR/files/environment/uboot.environment
-VALID_UBOOT_MD5=$MIRROR/valid-uboot.md5
+UBOOT_MTD0_BASE_URL=$MIRROR/uboot/files/uboot/uboot.mtd0 # .platform.version.kwb will be appended to this
+UBOOT_ENV_URL=$MIRROR/uboot/files/environment/uboot.environment
+VALID_UBOOT_MD5=$MIRROR/uboot/valid-uboot.md5
 
-BLPARAM_URL=$MIRROR/blparam
-NANDDUMP_URL=$MIRROR/nanddump
-NANDWRITE_URL=$MIRROR/nandwrite
-FLASH_ERASE_URL=$MIRROR/flash_erase
-FW_PRINTENV_URL=$MIRROR/fw_printenv
-FW_CONFIG_URL=$MIRROR/fw_env.config
+BLPARAM_URL=$MIRROR/uboot/blparam
+NANDDUMP_URL=$MIRROR/uboot/nanddump
+NANDWRITE_URL=$MIRROR/uboot/nandwrite
+FLASH_ERASE_URL=$MIRROR/uboot/flash_erase
+FW_PRINTENV_URL=$MIRROR/uboot/fw_printenv
+FW_CONFIG_URL=$MIRROR/uboot/fw_env.config
 
 
 UBOOT_MTD0=/tmp/uboot.mtd0.kwb
