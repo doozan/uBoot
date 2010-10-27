@@ -165,10 +165,27 @@ install ()
   return 0
 }
 
+# Parse command line
+for i in $*
+do
+  case $i in
+    --force-platform=*)
+      FORCE_PLATFORM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+      echo "Forcing platform to [$FORCE_PLATFORM]"
+      ;;
+    --no-uboot-check)
+      NO_UBOOT_CHECK=1
+      ;;
+    --noprompt)
+      NOPROMPT=1
+      ;;
+    *)
+      ;;
+  esac
+done
 
 
-if [ "$1" != "--noprompt" ]; then
-
+if [ "$NOPROMPT" != "1" ]; then
   echo ""
   echo ""
   echo "!!!!!!  DANGER DANGER DANGER DANGER DANGER DANGER  !!!!!!"
@@ -234,7 +251,7 @@ if [ "$UBOOT_DETAILS" != "" ]; then
 else
   echo "## Unknown uBoot detected on mtd0: $CURRENT_UBOOT_MD5"
   echo "##"
-  if [ "$1" != "--no-uboot-check" ]; then
+  if [ "$NO_UBOOT_CHECK" != "1" ]; then
     echo "## The installer could not detect the version of your current uBoot"
     echo "## This may happen if you have installed a different uBoot on"
     echo "## /dev/mtd0 or if you have bad blocks on /dev/mtd0"
@@ -285,6 +302,20 @@ else
       fi
     done
 
+  fi
+fi
+
+if [ "$FORCE_PLATFORM" != "" -a "$FORCE_PLATFORM" != "$UBOOT_PLATFORM" ]; then
+  echo "## --force-platform paramater [$FORCE_PLATFORM] does not match detected platform [$UBOOT_PLATFORM]."
+  echo -n "Are you sure your device is a "$FORCE_PLATFORM"? [y/N] "
+  read FORCE
+  if [ "$FORCE" = "y" -o "$FORCE" = "Y" ]; then
+    echo "## Forcing installation of [$FORCE_PLATFORM] platform"
+    UBOOT_PLATFORM=$FORCE_PLATFORM
+    UBOOT_VERSION="unknown"
+  else 
+    echo "## Exiting. No changes were made to mtd0."
+    exit 1
   fi
 fi
 
@@ -372,7 +403,9 @@ if [ "$UPDATE_UBOOT" = "1" ]; then
   echo ""
   echo "# Installing uBoot"
   UBOOT_MTD0_URL="$UBOOT_MTD0_BASE_URL.$UBOOT_PLATFORM.$UBOOT_CURRENT.kwb"
+  echo "## Installing $UBOOT_PLATFORM $UBOOT_CURRENT"
 
+  if [ -f "$UBOOT_MTD0" ]; then rm "$UBOOT_MTD0"; fi
   download_and_verify "$UBOOT_MTD0" "$UBOOT_MTD0_URL"
   if [ "$?" -ne "0" ]; then
     echo "## uBoot could not be downloaded, or the MD5 does not match."
@@ -389,6 +422,7 @@ if [ "$UPDATE_UBOOT" = "1" ]; then
   # dump mtd0 and compare the checksum, to make sure it installed properly  
   $NANDDUMP -no -l 0x80000 -f /tmp/mtd0.uboot /dev/mtd0
   echo "## Verifying new uBoot..."
+  if [ -f "$UBOOT_MTD0.md5" ]; then rm "$UBOOT_MTD0.md5"; fi
   wget -O "$UBOOT_MTD0.md5" "$UBOOT_MTD0_URL.md5"
   
   verify_md5 "/tmp/mtd0.uboot" "$UBOOT_MTD0.md5"
