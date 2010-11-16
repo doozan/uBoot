@@ -198,6 +198,7 @@ if [ "$NOPROMPT" != "1" ]; then
   echo "This installer will only work on the following devices:"
   echo " Seagate GoFlex Net"
   echo " Seagate Dockstar"
+  echo " Pogoplug v1"
   echo " Pogoplug Pink"
   echo "Do not run this installer on any other device."
   echo ""
@@ -277,8 +278,9 @@ else
       echo "What device are you using? Type the number of your device and press ENTER."
       echo "1 - Seagate Dockstar"
       echo "2 - Seagate GoFlex Net"
-      echo "3 - Pogoplug v2 - Pink"
-      echo "4 - Other"
+      echo "3 - Pogoplug v1"
+      echo "4 - Pogoplug v2 - Pink"
+      echo "5 - Other"
       read device
 
       if [ "$device" = "1" ]; then
@@ -290,10 +292,14 @@ else
         UBOOT_PLATFORM="goflexnet"
         UBOOT_VERSION="unknown"
       elif [ "$device" = "3" ]; then
+        echo "Selected Pogoplug v1"
+        UBOOT_PLATFORM="pogov1"
+        UBOOT_VERSION="unknown"
+      elif [ "$device" = "4" ]; then
         echo "Selected Pogoplug v2 - Pink"
         UBOOT_PLATFORM="pinkpogo"
         UBOOT_VERSION="unknown"
-      elif [ "$device" = "4" ]; then
+      elif [ "$device" = "5" ]; then
         echo "Selected Other Device, exiting"
         echo "This installer is only compatible with the listed devices."
         exit 1
@@ -385,8 +391,8 @@ if [ -d /usr/local/cloudengines/ -a ! -e $UBOOT_ORIGINAL ]; then
 
   install "$BLPARAM"          "$BLPARAM_URL"           755
 
-  if [ "$UBOOT_PLATFORM" = "pinkpogo"  ]; then BOOTCMD='nand read.e 0x800000 0x100000 0x200000; setenv bootargs $(console) $(bootargs_root); bootm 0x800000'
-  # dockstar and goflex have the same bootcmd
+  if   [ "$UBOOT_PLATFORM" = "pinkpogo"  ]; then BOOTCMD='nand read.e 0x800000 0x100000 0x200000; setenv bootargs $(console) $(bootargs_root); bootm 0x800000'
+  # dockstar, goflex, and pogov1 have the same bootcmd
   else BOOTCMD='nand read.e 0x800000 0x100000 0x300000; setenv bootargs $(console) $(bootargs_root); bootm 0x800000'
   fi
   $BLPARAM "bootcmd=$BOOTCMD" > /dev/null 2>&1
@@ -534,6 +540,7 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
     if   [ "$UBOOT_PLATFORM" = "dockstar" ];  then echo $FW_SETENV arcNumber 2998
     elif [ "$UBOOT_PLATFORM" = "goflexnet" ]; then echo $FW_SETENV arcNumber 3089
     elif [ "$UBOOT_PLATFORM" = "pinkpogo" ];  then echo $FW_SETENV arcNumber 2998
+    elif [ "$UBOOT_PLATFORM" = "pogov1" ];    then echo $FW_SETENV arcNumber 2998
     fi
   fi
 
