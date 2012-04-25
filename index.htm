@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+
+<head>
+<meta name="description" content="Update uBoot on your Dockstar, GoFlex or Pogoplug NAS">
+<meta name="keywords" content="uBoot,Dockstar,GoFlex,Pogoplug,Seagate">
+
+<title>Update uBoot on your Dockstar, GoFlex, or Pogoplug NAS</title>
+
+<style type="text/css">
+.code
+{
+  -moz-border-radius:6px 6px 6px 6px;
+  background-color:#F2F2F2;
+  border:1px solid black;
+  margin:1em;
+  padding:14px 20px;
+  white-space:pre;
+}
+.warn
+{
+  color: red;
+}
+</style>
+
+</head>
+
+<body>
+<h2>Update uBoot on your Dockstar, GoFlex, or Pogoplug NAS</h2>
+
+<p class="warn">Disclaimer: Flashing mtd0 carries a risk of breaking your device.</p>
+
+<p>Remove any USB devices and reboot your device.  After connecting to it with SSH, run the following commands:</p>
+
+<div class="code">cd /tmp
+wget http://projects.doozan.com/uboot/install_uboot_mtd0.sh
+chmod +x install_uboot_mtd0.sh
+./install_uboot_mtd0.sh
+</div>
+
+<h4>Changes from the default uBoot</h4>
+<ul>
+  <li>Based on the latest uBoot source code.</li>
+  <li>Support for booting from USB drives.</li>
+  <li>Support for UBIFS partitions on NAND.</li>
+  <li>Support for complex boot scripts using the HUSH shell.</li>
+  <li>Configurable environment variables for customized boot commands.</li>
+</ul>
+
+
+<h2>Configuring the uBoot Environment</h2>
+
+<p>The new uBoot supports two new command line tools for configuring the environment: <em>fw_printenv</em> and <em>fw_setenv</em>,
+which work exactly like their internal <em>printenv</em> and <em>setenv</em> commands.</p>
+
+<p>The script will install these utilities in /usr/bin in your Pogoplug environment:</p>
+<div class="code">fw_printenv
+fw_setenv &lt;param&gt; &lt;value&gt;
+</div>
+
+
+<h2>Compiling uBoot</h2>
+
+<p>See my <a href="build_uboot.htm">notes on compiling uBoot</a> if you're interesting in building your own uBoot.</p>
+
+
+<h2>Netconsole</h2>
+<p>If you don't have a serial cable, you can still connect to uBoot using <a href="http://forum.doozan.com/read.php?3,14,14">netconsole.</a>
+
+<h2>Forum</h2>
+<p>Please visit the <a href="http://forum.doozan.com">forum</a> for additional uBoot information and support.</p>
+
+
+<h2>Old: Install chained uBoot on mtd3</h2>
+
+<p>This section is for reference only. You should probably install uBoot to mtd0 as described
+above, unless you have a good reason not to.</p>
+<p>This is the old 'chained' bootloader method.  Don't run this if you have already upgraded uBoot on mtd0.</p>
+
+<p>Remove your USB drive, boot into the default Pogoplug environment, and run the following commands:</p>
+
+<div class="code">cd /tmp
+wget http://projects.doozan.com/uboot/install_uboot_mtd3.sh
+chmod +x install_uboot_mtd3.sh
+./install_uboot_mtd3.sh
+</div>
+
+<p>You can boot to the Pogoplug environment with the 'run bootcmd_pogo' command in the new uBoot.  By default, the new uBoot will attempt to boot from a USB drive
+and, failing that, it will boot the original Pogoplug installation.</p>
+
+
+<h2>Old: Restore old uBoot on mtd0</h2>
+
+<p>This section is for reference only.  You should not run this unless you have a very good reason.</p>
+
+<p>If, for some reason, you want to revert back to the original bootloader, you can use the following instructions to restore the original bootloader:</p>
+
+<div class="code"># Restore original uBoot
+wget http://download.doozan.com/uboot/files/uboot/uboot.mtd0.dockstar.original.kwb
+flash_erase /dev/mtd0 0 4
+nandwrite /dev/mtd0 uboot.mtd0.dockstar.original.kwb
+</div>
+
+
+
+<p>Enjoy!</p>
+
+<p>-- Jeff</p>
+
+</body>
+
+</html>

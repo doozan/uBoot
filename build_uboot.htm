@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+
+<head>
+<meta name="description" content="Building uBoot for the Seagate Dockstar, GoFlex Net, and Pogoplug Pink">
+<meta name="keywords" content="Dockstar,Debian,Linux,Pogo,Pogoplug,Seagate">
+
+<title>How to build uBoot for the Dockstar</title>
+
+<style type="text/css">
+.code
+{
+  -moz-border-radius:6px 6px 6px 6px;
+  background-color:#F2F2F2;
+  border:1px solid black;
+  margin:1em;
+  padding:14px 20px;
+  white-space:pre;
+}
+.warn
+{
+  color: red;
+}
+</style>
+
+</head>
+
+<body>
+
+<p>If you arrived here by search engine, and just want to install a new uBoot on your device, please see <a href="/debian/uboot/">this page.</a></p>
+
+<h2>Building uBoot for the Seagate Dockstar, GoFlex Net, and Pogoplug Pink</h2>
+
+<p>The Dockstar comes with a very old version of uBoot installed to /dev/mtd0.  This bootloader works well enough to boot the built-in Pogoplug install on the NAND, but
+it's lacking some of the nice features of uBoot, like booting from USB or NFS.</p>
+
+<p>To unlock the Dockstar, we need to install an updated uBoot.  There are two methods of doing this:</p>
+<ul>
+<li>Install a new uBoot to /dev/mtd0</li>
+<li>Install a chained uBoot to /dev/mtd3</li>
+</ul>
+
+<p>The replacement uBoot is the best option, but it's not risk free.  You can brick your Dockstar by flashing a bad image to /dev/mtd0.  However, if you use a known image, like the one I've provided,
+it's no riskier than flashing new firmware on any other device.  And it comes with some advantages: with only one bootloader on your dockstar, it will boot several seconds faster, it will boot
+more reliably, and most importantly, it leaves the 219-megabyte partition on /dev/mtd3 available to be used any way you see fit.</p>
+
+<p>The "chained bootloader" technique is an older technique that was used by projects before there was a good replacement for the uBoot on mtd0.
+It doesn't touch any of the stock firmware so if something goes wrong, you can always attach a serial cable and restore your system.  It's not
+a perfect solution, however: the "chained" loading commands don't always boot properly.  Sometimes it boots into
+your USB device and sometimes it boots into the original Pogoplug install.</p>
+
+<h3>Configure an ARM cross-compiler</h3>
+
+<p>I followed the directions at <a href="http://general.nas-central.org/wiki/Setting_up_the_codesourcery_toolchain_for_X86_to_ARM9_cross_compiling">NAS Central</a>.  For building
+the latest versions of uBoot, I used arm-2009q3.  For building the old Cloud Engines uBoot, I used arm-2006q1.  The older arm-2006q1 package is packaged a little differently than
+the newer version, so I had to tweak the NAS Central install script a little to install it.  Unless you really want to mess with the old version of uBoot, you do not need to
+install the arm-2006q1 toolchain.</p>
+
+
+<h3>Build replacement uBoot (replaces the existing uBoot on /dev/mtd0)</h3>
+
+<p class="warn">WARNING: Writing to /dev/mtd0 can brick your device.</p>
+
+<h4>Get the latest uBoot release and apply patches</h4>
+<div class="code">wget ftp://ftp.denx.de/pub/u-boot/u-boot-2010.09.tar.bz2
+tar -xjvf u-boot-2010.09.tar.bz2
+cd u-boot-2010.09
+
+wget http://projects.doozan.com/uboot/patches/general.patch
+wget http://projects.doozan.com/uboot/patches/mach-dockstar.patch
+
+# You can also grab mach-pinkpogo.patch and mach-goflexnet.patch
+# if you're interested in building uBoot for those platforms
+
+patch -p1 < general.patch
+patch -p1 < mach-dockstar.patch
+
+# Switch to the cross compiler environment
+codesourcery-arm-2009q3.sh
+make distclean
+make dockstar_config
+make u-boot.kwb
+
+dd if=u-boot.kwb of=uboot.mtd0.kwb bs=512k conv=sync
+</div>
+
+<p>This will create a file called uboot.mtd0.kwb that you can flash to /dev/mtd0</p>
+
+<h4>Testing your new uBoot</h4>
+
+<p>This assumes you have a serial cable to watch and interact with the uBoot process.  If you do not have a serial cable, you should not be playing with mtd0.</p>
+
+<p>Configure a TFTP server someplace on your network.  The example below assumes that your TFTP server is at 192.168.0.100 and that 192.168.0.200 is an acceptable IP address for uBoot to use.  You should alter these values for your specific network.</p>
+
+<p>Copy the uboot.mtd0.kwb file to /tftproot</p>
+
+<p>Interrupt the Pogoplug uBoot loader and enter the following commands:
+<div class="code">setenv ipaddr 192.168.0.200
+setenv serverip 192.168.0.100
+tftp 0x800000 uboot.mtd0.kwb
+go 0x800200
+</div>
+
+<p>Notice that we load the image at 0x800000 but start running it from 0x800200.  This is because the first 0x200 bytes of are the kirkwood image header, and the real executable starts after the header.</p>
+
+<p>If your new uBoot loads successfully, you can make things permanent by writing it to mtd0.</p>
+
+<h4>Backup /dev/mtd0</h4>
+<p>To create an image of mtd0, you need to dump the nand without ecc.  using "dd if=/dev/mtd0 of=mtd0.DOESNOTWORK" will automatically do ecc for you and will result in a corrupt image.  To successfully dump the nand, you need to do the following:
+<div class="code">cd /tmp
+wget http://download.doozan.com/uboot/nanddump
+chmod +x nanddump
+./nanddump -nof mtd0.backup /dev/mtd0
+./nanddump -nf mtd0.backup.oob
+./nanddump -nof uboot-original -s 0 -l 0x80000 /dev/mtd0
+</div>
+
+
+<h4>Writing your new uBoot to /dev/mtd0</h4>
+
+<div class="code"># Erase the first 512k of /dev/mtd0
+flash_erase /dev/mtd0 0 4
+
+# Write the new bootloader
+nandwrite /dev/mtd0 uboot.mtd0.kwb
+
+# Cross your fingers and reboot..
+</div>
+
+
+
+<h3>Build chained uBoot (installs on /dev/mtd3)</h3>
+
+<h4>Get the latest uBoot source code and apply patches</h4>
+<div class="code">git clone git://git.denx.de/u-boot.git u-boot
+cd u-boot
+
+wget http://projects.doozan.com/uboot/patches/uboot.mtd3.patch
+patch -p1 < uboot.mtd3.patch
+
+wget http://projects.doozan.com/uboot/patches/mkDockstar.mtd3
+chmod +x mkDockstar.mtd3
+
+# Switch to the cross compiler environment
+codesourcery-arm-2009q3.sh
+
+./mkDockstar.mtd3
+</div>
+
+<h4>Testing your new uBoot</h4>
+
+<p>This assumes you have a serial cable to watch and interact with the uBoot process.  If you do not have a serial cable, you can follow the intsructions for "Writing your new uBoot" and just hope for the best.</p>
+
+<p>Configure a TFTP server someplace on your network.  The example below assumes that your TFTP server is at 192.168.0.100 and that 192.168.0.200 is an acceptable IP address for uBoot to use.  You should alter these values for your specific network.</p>
+
+<p>Copy the uboot.mtd3.bin file to /tftproot</p>
+
+<p>Interrupt the Pogoplug uBoot loader and enter the following commands:
+<div class="code">setenv ipaddr 192.168.0.200
+setenv serverip 192.168.0.100
+tftp 0x800000 uboot.mtd3.bin
+go 0x800000
+</div>
+
+<p>This loads our new uBoot into memory at address 0x800000 and starts running it.  The first uBoot is already loaded into memory at 0x600000, so this puts us just beyond that environment.  If your new uBoot loads successfully, you can make things permanent by writing it to mtd3.</p>
+
+<h4>Writing your new uBoot to /dev/mtd3</h4>
+<p>Boot to the original Pogoplug environment and enter the following commands:</p>
+
+<div class="code">flash_eraseall /dev/mtd3
+nandwrite /dev/mtd3 uboot.mtd3.bin
+</div>
+
+
+
+<h3>Playing with the old uBoot code</h3>
+<p>The Cloud Engines <a href="http://www.pogoplug.com/home-en-developers-open-source.html">open source</a> page has a download link for their uBoot Bootloader, <a href="http://download.pogoplug.com/opensource/pogoplug-u-boot-1.1.4.tgz">pogoplug-u-boot-1.1.4.tgz</a>.  There is also an older file called <a href="http://download.pogoplug.com/opensource/pogoplug-u-boot-1.1.4.pp2.0.tar.bz2">pogoplug-u-boot-1.1.4.pp2.0.tar.bz2</a> that I found referenced in <a href="http://www.pogoplugged.com/forum/thread/11515/How-To-Find-mkfs-jffs2-and-other-tools-on-Pogoplug/?page=3#3233">this post</a> on the Pogoplug forum.  This older file is more interesting for us because it has a 'redstone_config' make target, which is the development name for the Dockstar board.  Make sure you use the install the older arm-2006q1 cross compiler to build these sources.</p>
+
+<div class="code">wget http://download.pogoplug.com/opensource/pogoplug-u-boot-1.1.4.pp2.0.tar.bz2
+tar -xjvf pogoplug-u-boot-1.1.4.pp2.0.tar.bz2
+cd u-boot
+
+# Switch to the cross compiler environment
+codesourcery-arm-2006q1.sh
+
+make mrproper
+make redstone_config
+make
+</div>
+
+<h3>A few points of interest regarding the original Pogoplug uBoot's boot process:</h3>
+<ul>
+
+<li>The original Pogoplug uBoot on /dev/mtd0 is prefixed by a 512 byte header.  The first 32 bytes of this header are the bhr_t struct, as defined in <a href="http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot/u-boot-marvell.git;a=blob;f=tools/kwbimage.h#l66">tools/kwbimage.h</a>.  This tells
+the board how to load the image into memory.  The remaining bytes are board specific declarations defined in <a href="http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot/u-boot-marvell.git;a=blob;f=board/Marvell/sheevaplug/kwbimage.cfg">board/Marvell/sheevaplug/kwbimage.cfg</a>.</li>
+
+<li>The original Pogoplug uBoot source includes a utility called doimage that reads command line parameters plus some declarations in dramregs_pp128_A.txt to create the 512 byte header that it prepends to uboot.bin.</li>
+
+<li>Newer uBoot sources have a utility called mkimage that replaces the to the old doimage utility, except that it reads parameters from from board/Marvell/sheevaplug/kwbimage.cfg</li>
+
+<li>The board specific declarations in board/Marvell/sheevaplug/kwbimage.cfg are slightly different than the declarations in the Pogoplug dramregs_pp128_A.txt included in the old Pogoplug source.  Since the values in dramregs_pp128_A.txt match the header of the original uBoot on mtd0, I use doimage to create the uboot.mtd0.kwb file although I'm sure it's possible to make the same image with the mkimage utility.</li>
+
+<li>The header on the original Pogoplug uBoot tells the processor to load it at 0x60000 and to start entry at 0x67000.  The System.map for this uBoot shows a romBoot function at x67003c.  I assume the 3c bytes before this are just setting up the environment before calling this procedure.  I'm not sure why the image has code entry at 0x67000 instead of 0x60000.  The uboot.mtd0 image that I create uses 0x60000 as the base and the entry point .</li>
+
+<li>The original Pogoplug uBoot reads and writes its environment to NAND at 0xa0000 on mtd0.  This is also where the blparam utility will read and write the environment settings.  The first 4 bytes at 0xa0000 are a checksum.  I do not know how large an area is reserved for the environment.</li>
+
+<li>There are no sources available for the Cloud Engines blparam utility.</li>
+
+<li>The blparam utility is similar to the fw_env utility in <a href="http://git.denx.de/cgi-bin/gitweb.cgi?p=u-boot/u-boot-marvell.git;a=tree;f=tools/env">tools/env</a> but I believe it uses a different method of calculating the checksum.  I tried to discover how large an area uBoot uses for its environment by using a modified fw_env utility to calculate checksums for all possible environments with start points at 0xa0000 and end points before 0x100000 but none matched the CRC stored at 0xa0000.</li>
+
+<li>Since neither the blparam nor the actual Pogoplug uBoot complain about our uBoot writing its environment data to 0xc0000, the size of the original environment must be less than 0x20000 bytes.</li>
+</ul>
+
+<p>Please visit the <a href="http://forum.doozan.com">forum</a> for more uBoot information.</p>
+
+<p>Have fun!</p>
+
+<p>-- Jeff</p>
+
+
+</body>
+</html>
