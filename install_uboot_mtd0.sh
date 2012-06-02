@@ -1,42 +1,44 @@
 #!/bin/sh
+#
+# Install uBoot on mtd0
 
+# Copyright (c) 2010-2012 Jeff Doozan
 #
-#   This program is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; either version 2 of the License, or
-#   (at your option) any later version.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#   You should have received a copy of the GNU General Public License
-#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# 	Dockstar u-Boot mtd0 Installer v0.4
-# 	by Jeff Doozan
-#
-#   Based on Pogoplug u-Booter Installer v0.2
-#   by IanJB, original method and inspiration from aholler:
-# 			http://ahsoftware.de/dockstar/
-#
-# 	This is a script to write a newer u-boot to mtd0
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Version 1.1 [6/2/2012] Download files from download.doozan.com
+
+VALID_UBOOT_MD5=http://jeff.doozan.com/uboot/valid-uboot.md5
 
 # It is NOT a good idea to start your own mirror
 # You should leave this as-is
-MIRROR=http://jeff.doozan.com/debian
+MIRROR=http://download.doozan.com/uboot
 
-UBOOT_MTD0_BASE_URL=$MIRROR/uboot/files/uboot/uboot.mtd0 # .platform.version.kwb will be appended to this
-UBOOT_ENV_URL=$MIRROR/uboot/files/environment/uboot.environment
-VALID_UBOOT_MD5=$MIRROR/uboot/valid-uboot.md5
+UBOOT_MTD0_BASE_URL=$MIRROR/files/uboot/uboot.mtd0 # .platform.version.kwb will be appended to this
+UBOOT_ENV_URL=$MIRROR/files/environment/uboot.environment
 
-BLPARAM_URL=$MIRROR/uboot/blparam
-NANDDUMP_URL=$MIRROR/uboot/nanddump
-NANDWRITE_URL=$MIRROR/uboot/nandwrite
-FLASH_ERASE_URL=$MIRROR/uboot/flash_erase
-FW_PRINTENV_URL=$MIRROR/uboot/fw_printenv
-FW_CONFIG_URL=$MIRROR/uboot/fw_env.config
+BLPARAM_URL=$MIRROR/blparam
+NANDDUMP_URL=$MIRROR/nanddump
+NANDWRITE_URL=$MIRROR/nandwrite
+FLASH_ERASE_URL=$MIRROR/flash_erase
+FW_PRINTENV_URL=$MIRROR/fw_printenv
+FW_CONFIG_URL=$MIRROR/fw_env.config
 
 
 UBOOT_MTD0=/tmp/uboot.mtd0.kwb
@@ -57,8 +59,8 @@ verify_md5 ()
   local file=$1
   local md5=$2
 
-  local check_md5=$(cat "$md5" | cut -d' ' -f1) 
-  local file_md5=$(md5sum "$file" | cut -d' ' -f1)  
+  local check_md5=$(cat "$md5" | cut -d' ' -f1)
+  local file_md5=$(md5sum "$file" | cut -d' ' -f1)
 
   if [ "$check_md5" = "$file_md5" ]; then
     return 0
@@ -101,12 +103,12 @@ download_and_verify ()
   wget -O "$file_dest" "$file_url"
   # retry the download if it failed
   verify_md5 "$file_dest" "$md5_dest"
-  if [ "$?" -ne "0" ]; then  
+  if [ "$?" -ne "0" ]; then
     # Download failed or MD5 did not match, try again
     if [ -f "$file_dest" ]; then rm -f "$file_dest"; fi
     wget -O "$file_dest" "$file_url"
     verify_md5 "$file_dest" "$md5_dest"
-    if [ "$?" -ne "0" ]; then  
+    if [ "$?" -ne "0" ]; then
       rm -f "$md5_dest"
       return 1
     fi
@@ -119,9 +121,9 @@ download_and_verify ()
 install ()
 {
   local file_dest=$1
-  local file_url=$2   
+  local file_url=$2
   local file_pmask=$3  # Permissions mask
-  
+
   echo "# checking for $file_dest..."
 
   # Install target file if it doesn't already exist
@@ -143,7 +145,7 @@ install ()
       mount -o remount,rw /
     fi
     rm -f "$file_dest" 2> /dev/null
-        
+
     download_and_verify "$file_dest" "$file_url"
     if [ "$?" -ne "0" ]; then
       echo "## Could not install $file_dest from $file_url, exiting."
@@ -196,10 +198,11 @@ if [ "$NOPROMPT" != "1" ]; then
   echo "This script will replace the bootloader on /dev/mtd0."
   echo ""
   echo "This installer will only work on the following devices:"
-  echo " Seagate GoFlex Net"
   echo " Seagate Dockstar"
+  echo " Seagate GoFlex Net"
+  echo " Seagate GoFlex Home"
   echo " Pogoplug v1"
-  echo " Pogoplug Pink"
+  echo " Pogoplug Pink (v2)"
   echo "Do not run this installer on any other device."
   echo ""
   echo "By typing ok, you agree to assume all liabilities and risks "
@@ -231,7 +234,7 @@ if [ ! -f "$FW_SETENV" ]; then
 fi
 
 
-# Dump existing uBoot and compare it to a database of known versions 
+# Dump existing uBoot and compare it to a database of known versions
 
 echo ""
 echo "# Validating existing uBoot..."
@@ -244,7 +247,7 @@ wget -O "/tmp/valid-uboot.md5" "$VALID_UBOOT_MD5"
 UPDATE_UBOOT=1
 UBOOT_PLATFORM=
 CURRENT_UBOOT_MD5=$(md5sum "/tmp/uboot-mtd0-dump" | cut -d' ' -f1)
-UBOOT_DETAILS=$(grep $CURRENT_UBOOT_MD5 /tmp/valid-uboot.md5)
+UBOOT_DETAILS=$(grep $CURRENT_UBOOT_MD5 /tmp/valid-uboot.md5 | head -1)
 if [ "$UBOOT_DETAILS" != "" ]; then
   UBOOT_PLATFORM=$(echo $UBOOT_DETAILS | sed 's/^\w* \(\w*\) .*$/\1/')
   UBOOT_VERSION=$(echo $UBOOT_DETAILS | sed 's/^\w* \w* \(.*\)$/\1/')
@@ -258,9 +261,9 @@ else
     echo "## /dev/mtd0 or if you have bad blocks on /dev/mtd0"
     echo "##"
     echo "## If you have bad blocks on mtd0, you should not try to install uBoot."
-    echo "##"
-    echo "## If you have installed a diffirent uBoot on mtd0, and understand the"
-    echo "## risks, you can re-run the installer with the --no-uboot-check parameter"
+#    echo "##"
+#    echo "## If you have installed a diffirent uBoot on mtd0, and understand the"
+#    echo "## risks, you can re-run the installer with the --no-uboot-check parameter"
     echo "##"
     echo "## Installation cancelled."
     rm "/tmp/valid-uboot.md5"
@@ -278,9 +281,10 @@ else
       echo "What device are you using? Type the number of your device and press ENTER."
       echo "1 - Seagate Dockstar"
       echo "2 - Seagate GoFlex Net"
-      echo "3 - Pogoplug v1"
-      echo "4 - Pogoplug v2 - Pink"
-      echo "5 - Other"
+      echo "3 - Seagate GoFlex Home"
+      echo "4 - Pogoplug v1"
+      echo "5 - Pogoplug v2 - Pink"
+      echo "6 - Other"
       read device
 
       if [ "$device" = "1" ]; then
@@ -292,14 +296,18 @@ else
         UBOOT_PLATFORM="goflexnet"
         UBOOT_VERSION="unknown"
       elif [ "$device" = "3" ]; then
+        echo "Selected Seagate GoFlex Home"
+        UBOOT_PLATFORM="goflexhome"
+        UBOOT_VERSION="unknown"
+      elif [ "$device" = "4" ]; then
         echo "Selected Pogoplug v1"
         UBOOT_PLATFORM="pogov1"
         UBOOT_VERSION="unknown"
-      elif [ "$device" = "4" ]; then
+      elif [ "$device" = "5" ]; then
         echo "Selected Pogoplug v2 - Pink"
         UBOOT_PLATFORM="pinkpogo"
         UBOOT_VERSION="unknown"
-      elif [ "$device" = "5" ]; then
+      elif [ "$device" = "6" ]; then
         echo "Selected Other Device, exiting"
         echo "This installer is only compatible with the listed devices."
         exit 1
@@ -319,7 +327,7 @@ if [ "$FORCE_PLATFORM" != "" -a "$FORCE_PLATFORM" != "$UBOOT_PLATFORM" ]; then
     echo "## Forcing installation of [$FORCE_PLATFORM] platform"
     UBOOT_PLATFORM=$FORCE_PLATFORM
     UBOOT_VERSION="unknown"
-  else 
+  else
     echo "## Exiting. No changes were made to mtd0."
     exit 1
   fi
@@ -330,7 +338,7 @@ if [ "$UBOOT_IS_CURRENT" = "1" ]; then
   echo "## The newest uBoot is already installed on mtd0."
   UPDATE_UBOOT=0
 else
-  UBOOT_CURRENT=$(grep $UBOOT_PLATFORM /tmp/valid-uboot.md5 | grep current | sed 's/^\w* \w* \(.*\)-current$/\1/')
+  UBOOT_CURRENT=$(grep $UBOOT_PLATFORM /tmp/valid-uboot.md5 | grep current | head -1 | sed 's/^\w* \w* \(.*\)-current$/\1/')
 fi
 
 rm "/tmp/valid-uboot.md5"
@@ -364,7 +372,7 @@ if [ -d /usr/local/cloudengines/ -a ! -e $UBOOT_ORIGINAL ]; then
     mount -o rw,remount /
 
     # Add /sbin to the path and cleanup the shell prompt
-    if [ ! -f /root/.bash_profile ]; then 
+    if [ ! -f /root/.bash_profile ]; then
       echo -e \
   "export PS1='\h:\w\$ '
   export PATH='/usr/bin:/bin:/sbin'
@@ -379,7 +387,7 @@ if [ -d /usr/local/cloudengines/ -a ! -e $UBOOT_ORIGINAL ]; then
     echo "Disabling the pogoplug service..."
     # Comment out the line that starts hmbgr.sh
     sed -i 's/^\/etc\/init.d\/hbmgr.sh start/#Uncomment the line below to enable the pogoplug service\n#\/etc\/init.d\/hbmgr.sh start/' /etc/init.d/rcS
-    
+
     mount -o ro,remount /
 
     echo "Done fixing pogoplug environment."
@@ -418,19 +426,19 @@ if [ "$UPDATE_UBOOT" = "1" ]; then
     echo "## Exiting. No changes were made to mtd0."
     exit 1
   fi
-  
+
   # Write new uBoot to mtd0
   # Erase the first 512k
-  $FLASH_ERASE /dev/mtd0 0 4 
+  $FLASH_ERASE /dev/mtd0 0 4
 
   $NANDWRITE /dev/mtd0 $UBOOT_MTD0
 
-  # dump mtd0 and compare the checksum, to make sure it installed properly  
+  # dump mtd0 and compare the checksum, to make sure it installed properly
   $NANDDUMP -no -l 0x80000 -f /tmp/mtd0.uboot /dev/mtd0
   echo "## Verifying new uBoot..."
   if [ -f "$UBOOT_MTD0.md5" ]; then rm "$UBOOT_MTD0.md5"; fi
   wget -O "$UBOOT_MTD0.md5" "$UBOOT_MTD0_URL.md5"
-  
+
   verify_md5 "/tmp/mtd0.uboot" "$UBOOT_MTD0.md5"
   if [ "$?" -ne "0" ]; then
     rm -f "$UBOOT.md5"
@@ -452,15 +460,27 @@ if [ "$UPDATE_UBOOT" = "1" ]; then
     echo "# Verified successfully!"
   fi
   rm -f "$UBOOT_MTD0.md5"
-  
+
 fi
 
-UPDATE_UBOOT_ENVIRONMENT=$UPDATE_UBOOT
+if [ "$UPDATE_UBBOT" = "0" ]; then
+  UPDATE_UBOOT_ENVIRONMENT=0
+elif [ "$UBOOT_VERSION" = "original" -o "$UBOOT_VERSION" = "unknown" ]; then
+  UPDATE_UBOOT_ENVIRONMENT=1
+else  # Updating uboot, but it's from a known "new" uboot, no need to reset the environment
+  UPDATE_UBOOT_ENVIRONMENT=0
+fi
 
-if [ "$UPDATE_UBOOT" != "1" -a "$1" != "--noprompt" ]; then
+if [ "$UPDATE_UBOOT_ENVIRONMENT" = "0" -a "$1" != "--noprompt" ]; then
   echo ""
   echo ""
-  echo "You are already running the latest uBoot."
+  if [ "$UPDATE_UBOOT" = "0" ]; then
+    echo "You are already running the latest uBoot."
+  else
+    echo "You are already running a modern uBoot."
+  fi
+  echo "Your current uBoot environment should be reasonable.  However, if you're having"
+  echo "any probems booting, you can reset the environment variables to know good values."
   echo -n "Would you like to reset the uBoot environment? [N/y] "
   read PROMPT
   if [ "$PROMPT" = "y" -o "$PROMPT" = "Y" ]; then
@@ -472,7 +492,7 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
   echo ""
   echo "# Installing uBoot environment"
 
-  # Preserve the MAC address 
+  # Preserve the MAC address
   if [ "$ENV_ETHADDR" = "" ]; then
     ENV_ETHADDR=`$FW_PRINTENV ethaddr 2> /dev/null | cut -d'=' -f 2-`
   fi
@@ -528,8 +548,8 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
   # If there was no arcNumber set, then this is probably a new install.
   # Set the default arcNumber for the platform
   # Note: As of 10/24/2010 everything will default to the SHEEVAPLUG arcNumber (2097)
-  # at some point, they should start using the newer dockstar ID (2998) but currently the most 
-  # common kernels do not support the Dockstar machine ID 
+  # at some point, they should start using the newer dockstar ID (2998) but currently the most
+  # common kernels do not support the Dockstar machine ID
   else
     $FW_SETENV arcNumber 2097
     echo ""
@@ -538,6 +558,7 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
     echo "# Note: if you have a kernel that supports your platform, you should use the proper arcNumber."
     echo "# You can set the correct arcNumber by running the following command:"
     if   [ "$UBOOT_PLATFORM" = "dockstar" ];  then echo $FW_SETENV arcNumber 2998
+    elif [ "$UBOOT_PLATFORM" = "goflexhome" ]; then echo $FW_SETENV arcNumber 3089
     elif [ "$UBOOT_PLATFORM" = "goflexnet" ]; then echo $FW_SETENV arcNumber 3089
     elif [ "$UBOOT_PLATFORM" = "pinkpogo" ];  then echo $FW_SETENV arcNumber 2998
     elif [ "$UBOOT_PLATFORM" = "pogov1" ];    then echo $FW_SETENV arcNumber 2998
