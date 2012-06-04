@@ -541,8 +541,8 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
   $FW_SETENV ethaddr $ENV_ETHADDR
   if [ "$ENV_RESCUE_INSTALLED" = "1" ]; then $FW_SETENV rescue_installed $ENV_RESCUE_INSTALLED; fi
   if [ "$ENV_RESCUE_CUSTOM" != "" ]; then $FW_SETENV rescue_custom_params $ENV_RESCUE_CUSTOM; fi
-  if [ "$ENV_USB_CUSTOM" != "" ]; then $FW_SETENV rescue_usb_params $ENV_USB_CUSTOM; fi
-  if [ "$ENV_UBIFS_CUSTOM" != "" ]; then $FW_SETENV rescue_ubifs_params $ENV_UBIFS_CUSTOM; fi
+  if [ "$ENV_USB_CUSTOM" != "" ]; then $FW_SETENV usb_custom_params $ENV_USB_CUSTOM; fi
+  if [ "$ENV_UBIFS_CUSTOM" != "" ]; then $FW_SETENV ubifs_custom_params $ENV_UBIFS_CUSTOM; fi
   if [ "$ENV_ARCNUMBER" != "" ]; then
     $FW_SETENV arcNumber $ENV_ARCNUMBER
   # If there was no arcNumber set, then this is probably a new install.
