@@ -240,7 +240,7 @@ echo ""
 echo "# Validating existing uBoot..."
 
 # dump the first 512k of mtd0 to /tmp
-$NANDDUMP -no -l 0x80000 -f /tmp/uboot-mtd0-dump /dev/mtd0
+$NANDDUMP --noecc --omitoob -l 0x80000 -f /tmp/uboot-mtd0-dump /dev/mtd0
 
 wget -O "/tmp/valid-uboot.md5" "$VALID_UBOOT_MD5"
 
@@ -434,7 +434,7 @@ if [ "$UPDATE_UBOOT" = "1" ]; then
   $NANDWRITE /dev/mtd0 $UBOOT_MTD0
 
   # dump mtd0 and compare the checksum, to make sure it installed properly
-  $NANDDUMP -no -l 0x80000 -f /tmp/mtd0.uboot /dev/mtd0
+  $NANDDUMP --noecc --omitoob -l 0x80000 -f /tmp/mtd0.uboot /dev/mtd0
   echo "## Verifying new uBoot..."
   if [ -f "$UBOOT_MTD0.md5" ]; then rm "$UBOOT_MTD0.md5"; fi
   wget -O "$UBOOT_MTD0.md5" "$UBOOT_MTD0_URL.md5"
@@ -527,7 +527,7 @@ if [ "$UPDATE_UBOOT_ENVIRONMENT" = "1" ]; then
   echo "# Verifying uBoot environment"
 
   # Verify the uBoot environment
-  $NANDDUMP -nof "/tmp/uboot.environment" -s 0xc0000 -l 0x20000 /dev/mtd0
+  $NANDDUMP --noecc --omitoob -f "/tmp/uboot.environment" -s 0xc0000 -l 0x20000 /dev/mtd0
   wget -O "$UBOOT_ENV.md5" "$UBOOT_ENV_URL.md5"
   verify_md5 "/tmp/uboot.environment" "$UBOOT_ENV.md5"
   if [ "$?" -ne "0" ]; then
