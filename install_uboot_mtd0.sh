@@ -463,7 +463,7 @@ if [ "$UPDATE_UBOOT" = "1" ]; then
 
 fi
 
-if [ "$UPDATE_UBBOT" = "0" ]; then
+if [ "$UPDATE_UBOOT" = "0" ]; then
   UPDATE_UBOOT_ENVIRONMENT=0
 elif [ "$UBOOT_VERSION" = "original" -o "$UBOOT_VERSION" = "unknown" ]; then
   UPDATE_UBOOT_ENVIRONMENT=1
