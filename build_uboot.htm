@@ -113,7 +113,6 @@ go 0x800200
 wget http://download.doozan.com/uboot/nanddump
 chmod +x nanddump
 ./nanddump -nof mtd0.backup /dev/mtd0
-./nanddump -nf mtd0.backup.oob
 ./nanddump -nof uboot-original -s 0 -l 0x80000 /dev/mtd0
 </div>
 
